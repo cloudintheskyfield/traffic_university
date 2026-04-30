@@ -1,0 +1,1859 @@
+1
+
+RailVQA: A Benchmark and Framework for Efficient Interpretable
+Visual Cognition in Automatic Train Operation
+Sen Zhang, Runmei Li, Shizhuang Deng, Zhichao Zheng, Yuhe Zhang, Jiani Li, Kailun Zhang, Tao Zhang,
+Wenjun Wu, and Qunbo Wang*
+
+Abstract—As Automatic Train Operation (ATO) advances
+toward GoA4 and beyond, it increasingly depends on efficient,
+reliable cab-view visual perception and decision-oriented inference to ensure safe operation in complex and dynamic railway
+environments. However, existing approaches focus primarily on
+basic perception and often generalize poorly to rare yet safetycritical corner cases. They also lack the high-level reasoning
+and planning capabilities required for operational decisionmaking. Although recent Large Multi-modal Models (LMMs)
+show strong generalization and cognitive capabilities, their use in
+safety-critical ATO is hindered by high computational cost and
+hallucination risk. Meanwhile, reliable domain-specific benchmarks for systematically evaluating cognitive capabilities are
+still lacking. To address these gaps, we introduce RailVQAbench, the first VQA benchmark for cab-view visual cognition
+in ATO, comprising 20,000 single-frame and 1,168 video based
+QA pairs to evaluate cognitive generalization and interpretability
+in both static and dynamic scenarios. Furthermore, we propose
+RailVQA-CoM, a collaborative large–small model framework
+that combines small-model efficiency with large-model cognition via a transparent three-module architecture and adaptive
+temporal sampling, improving perceptual generalization and
+enabling more efficient reasoning and planning. Experiments
+demonstrate that the proposed approach substantially improves
+performance, enhances interpretability, improves efficiency, and
+strengthens cross-domain generalization in autonomous driving
+systems. Code and datasets will be available at https://cybereyebjtu.github.io/RailVQA.html.
+Index Terms—Autonomous driving, Rail transportation, Computer vision, Artificial Intelligence, Large Multi-modal Models.
+
+I. I NTRODUCTION
+
+D
+
+ESPITE increasingly standardized railway operating procedures, serious safety incidents—such as collisions and
+derailments caused by track intrusions, signal misinterpretation, or switch misalignment—remain challenging to prevent
+entirely [1]. One contributing factor is the sustained high
+attentional workload placed on human drivers, which increases
+the likelihood of perception errors and delayed responses.
+Against this backdrop, Automatic Train Operation (ATO) has
+become essential for advancing automation and promoting
+
+This work was supported by the Beijing Natural Science Foundation under
+Grant L252146. (Corresponding author: Qunbo Wang)
+Sen Zhang, Runmei Li, Zhichao Zheng, Yuhe Zhang, Jiani Li,
+Kailun Zhang, and Qunbo Wang are with the School of Automation
+and Intelligence, Beijing Jiaotong University, Beijing 100091, China (e-mail:
+szhang02004@outlook.com; rmli@bjtu.edu.cn; zczheng7901@163.com;
+24201025@bjtu.edu.cn; 24332036@bjtu.edu.cn; 24201023@bjtu.edu.cn;
+wangqb6@outlook.com).
+Shizhuang Deng and Tao Zhang are with the School of Software,
+Northwestern Polytechnical University, Xi’an 710072, China (e-mail: dengshizhuang@mail.nwpu.edu.cn; tao zhang@nwpu.edu.cn).
+Wenjun Wu is with the School of Artificial Intelligence, Beihang University,
+Beijing 100191, China (e-mail: wwj09315@buaa.edu.cn).
+
+the sustainable development of modern railway systems [2].
+Meanwhile, rapid advances in artificial intelligence have enabled the deployment of a range of driving-assistance functionalities. Yet the safety-critical nature of railway operations
+demands exceptional reliability, interpretability, and rigorous
+pre-deployment validation. This underscores the need for more
+intelligent train driving-assistance systems, together with a
+benchmark for their systematic evaluation.
+Previous railway studies, such as RailSem19 [3], OSDaR23 [4], and RailGoerl24 [5], largely target low-level
+perception tasks (e.g., semantic segmentation, object detection,
+et.al). Although effective in controlled experimental settings,
+they are often task-specific and lack of high-level cognition,
+therefore generalize poorly to diverse and complex real-world
+scenarios. Serious safety incidents are often caused by rare
+long-tail anomalies rather than routine conditions, motivating a
+shift from basic perception to higher-level, open-world hazard
+cognition with robust generalization.
+Recent advances in Large Multi-modal Models
+(LMMs) [6]–[8] offer a promising pathway to address
+these limitations. LMMs exhibit strong open-domain visual
+understanding and high-level reasoning capabilities, enabling
+autonomous systems to interpret dynamic environments,
+anticipate potential hazards, and perform rule-grounded scene
+understanding. Furthermore, techniques such as Chain-ofThought (CoT) reasoning [9] enhance inference reliability by
+explicitly structuring intermediate reasoning steps, thereby
+improving cognitive transparency.
+Nevertheless, the direct deployment of LMMs in ATO
+presents substantial practical challenges. First, the inherent
+black-box nature of such models often results in hallucinated
+reasoning [10], [11]. Moreover, processing dense, continuous
+video streams with LMMs can incur relatively high computational overhead, which may make it challenging to satisfy
+the time-sensitivity needs of safety-critical railway operations,
+particularly under high-speed conditions.
+More importantly, the absence of reliable and domainspecific evaluation benchmarks makes it difficult to rigorously
+assess the capability and safety of these models. Due to
+physical constraints like fixed tracks and extended braking
+distances, safe train operation demands recognizing static
+information (e.g., signals) and anticipating dynamic risks
+(e.g., animals crossings or moving obstacles). Yet, current research predominantly focuses on static, single-frame inference,
+overlooking the dynamic, multi-frame reasoning required for
+reliable automatic operation ability that is more critical and
+better aligned with real-world ATO environments.
+To address these limitations, we introduce RailVQA-bench,
+
+2
+
+Fig. 1. Overview of the proposed RailVQA-CoM framework, which consists of three hierarchical modules: (1) a Perception module that efficiently extracts
+visual primitives; (2) a Motion Analysis and Memory Log module that captures motion patterns and maintains temporal context for dynamic scenes; and (3)
+a Cognitive Inference module that performs high-level reasoning and supports decision-oriented inference.
+
+the first comprehensive Visual Question Answering (VQA)
+benchmark specifically designed for cab-view visual cognition in ATO. RailVQA-bench establishes a unified evaluation
+paradigm that integrates static scene understanding with dynamic safety-critical reasoning. It comprises 20,000 singleframe QA pairs for visual information understanding and
+1,168 video-based QA pairs for risk anticipation. The benchmark further requires the model to output structured perceiving–reasoning–planning Chain-of-Thought (CoT) grounded in
+visual evidence and operational constraints, enabling rigorous
+evaluation of interpretable perception and reasoning, while
+improving decision transparency.
+We further propose RailVQA-CoM, a Collaborative
+large–small Model framework for cab-view visual cognition
+in ATO. As illustrated in Fig. 1, it integrates the efficiency of
+lightweight perception models with the cognitive capabilities
+of large multi-modal models (LMMs). Instead of end-to-end
+black-box inference, RailVQA-CoM adopts a three-module
+hierarchical architecture: (1) a Small-Model Perception Module
+for efficient extraction of visual primitives, (2) a Motion
+Analysis and Memory Log Module for analyzing motion trend
+and constructing semantic representations when coping with
+dynamic scenes, and (3) a Large Model Cognitive Inference
+Module, which guides LMMs to generate structured CoT
+reasoning. This complete design partly reduces computational
+overhead while mitigating hallucination. Experiments demonstrate that our framework not only nearly increases endto-end throughput speed, but also effectively mitigates fatal
+visual hallucinations (with up to a 10-point improvement
+on the evaluation metrics), while supporting model-agnostic
+deployment methods for LMMs. In summary, this work makes
+the following three primary contributions:
+•
+
+Dataset: We present the first VQA benchmark for ATO
+
+that evaluates cab-view visual cognitive generalization
+and interpretability. It comprises 20,000 single-image QA
+pairs and 1,168 video-based QA pairs.
+• Metrics: Building on prevailing evaluation practices in
+autonomous driving, we propose a 12-dimensional, logicdriven evaluation protocol with an LMM-assisted scoring
+pipeline for cab-view visual cognition in ATO, shifting
+the focus from perception-only accuracy to cognitive
+reasoning.
+• Framework: We develop a collaborative large–small
+model framework for cab-view visual cognition in
+ATO, enabling more efficient and interpretable decisionoriented understanding.
+II. R ELATED W ORK
+A. Railway Scene Perception
+Computer vision has been increasingly adopted in railway
+systems for basic perception tasks. To drive this field forward,
+the community has established several benchmarks. Early
+efforts, such as RailSem19 [3], partly catalyzed scene understanding in rail environments, while OSDaR23 [4] pushed
+the boundaries of multi-sensor fusion for obstacle detection. To further enhance perception robustness, datasets like
+MRSI [12] introduced multi-modal infrared and RGB imagery for adverse lighting conditions, while other works have
+incorporated LiDAR [13] to provide precise 3D geometric
+measurements. More recently, RailGoerl24 [5] provided highquality sequences for dynamic multi-object tracking, and SynRailObs [14] introduced synthetic data generation pipelines to
+enrich the distribution of rare track anomalies. However, these
+works predominantly target low-level perception tasks, failing
+to capture the causal relationship between visual elements and
+railway operational response.
+
+3
+
+In parallel with dataset development, algorithmic innovations are still developing. Early research frequently employed
+image differencing [15] or optical flow analysis [16] for
+track obstacle detection, though these methods often suffered
+from high false alarm rates under environmental noise. To
+mitigate these false alarms, modern approaches have evolved
+to incorporate dynamic background modeling [17] and advanced neural networks (CNNs). For instance, the recently
+proposed YOLO-Rail framework [18] optimized real-time
+track obstacle detection specifically for resource-constrained
+edge deployment, and similar YOLO-based mechanisms have
+also attempted to integrate preliminary risk assessment modules [19]. Recent advances have introduced real-time multitask
+learning [20] and Lidar-Camera fusion [21] to railway perception. However, the inherent rigidity of these task-customized
+architectures still suffer from limited generalization across
+open-world scenarios. Meanwhile, they often fail to couple
+visual features with train-specific kinematic limits, thereby
+falling short in complex spatiotemporal safety reasoning.
+B. VQA in Autonomous Driving
+Visual Question Answering (VQA) [22] has progressively
+evolved from a perception-centric task into a representative
+paradigm for evaluating high-level visual Cognition. This
+transition is largely driven by the rapid development of Large
+Multi-modal Models (LMMs), such as LLaVA [23] and QwenVL [24], which substantially enhance both visual understanding and reasoning capabilities. In contrast to traditional perception pipelines [25], VQA frames scene understanding and
+decision-oriented inference as structured question–answering,
+providing a more unified interface for probing and assessing
+complex visual reasoning processes.
+Motivated by this formulation, the autonomous-driving
+community has adopted VQA as a benchmark and a training
+paradigm for vision–language reasoning in traffic scenes.
+Early efforts, including TrafficQA [26], NuScenes-QA [27],
+and LingoQA [28], provide structured supervision for traffic
+understanding. Building on this foundation, recent work integrates LMMs into end-to-end frameworks [29]. For example,
+DriveLM [30] and DriveVLM [31] combine graph-based representations with vision–language reasoning to connect perception and planning, while DriveGPT4 [32] and RoboTronDrive [33] further emphasize interpretable control and spatiotemporal alignment. To enhance reasoning consistency, recent
+approaches incorporate retrieval-augmented Chain-of-Thought
+(CoT) [7] and spatially-aware prompting [34], alongside more
+rigorous benchmarks such as DriveLMM-o1 [35], which evaluate step-by-step reasoning in complex driving scenarios.
+Nevertheless, road-centric VQA formulations do not transfer
+directly to automatic train operation. Trains operate on fixed
+tracks, exhibit less flexibility, and must comply with stringent
+signaling and operating rules; these characteristics mandate
+customized modeling paradigms and dedicated evaluation
+benchmarks.
+C. Collaboration of Large and Small Models
+Although Large Multi-modal Models (LMMs) provide
+strong open-world analysis [36] and reasoning capabilities, the
+
+huge computational cost brought about by LMMs inference
+cannot be ignored. To address this issue, recent research
+has increasingly explored collaborative paradigms that couple
+large models with lightweight specialized models [37], [38],
+enabling a more efficient allocation of computation.
+A representative direction is dynamic resource allocation, as
+exemplified by the Big.Little Vision Transformer [39], which
+improves efficiency by assigning tasks of varying complexity
+to models of different scales. Building on this idea, subsequent
+works have proposed diverse collaboration strategies. For
+instance, VisionGPT [40] offloads perception to specialized
+modules while reserving high-level reasoning for large models,
+and speculative execution methods [41] accelerate inference by
+generating intermediate reasoning drafts with smaller models.
+Meanwhile, adaptive routing mechanisms, such as KCM [42]
+and AdaCoMed [43], dynamically assign inputs based on task
+difficulty, further improving efficiency and robustness. In the
+context of VQA, recent approaches also incorporate multimodal heuristics to ground and stabilize LMM reasoning [44].
+Although existing large-small model collaborative architectures effectively balance efficiency and capability, they
+predominantly target static tasks. Currently, there is still a
+distinct lack of collaborative paradigms explicitly designed to
+improve the computational efficiency of complex reasoning on
+dense video streams. Achieving this is particularly difficult, as
+it demands a delicate trade-off between processing high-framerate visual inputs efficiently and maintaining the cognitive
+depth.
+III. R AILVQA- BENCH
+This section details RailVQA-bench, the first VQA benchmark for cab-view visual cognition in ATO. The benchmark
+is constructed via a pipeline combining automated generation (Sections III-C), and is compared with existing railway
+datasets in Table I.
+A. Task Formulation
+RailVQA-bench consists of two complementary subtasks—Static Single-frame VQA and Dynamic Multi-frame
+VQA (Fig. 2)—designed to evaluate cognitive reasoning in
+railway scenarios from a unified perspective. The static subtask
+mainly focus on rule compliance and right-of-way reasoning,
+while the dynamic subtask mainly assess kinematic risk awareness and safety-critical reasoning under temporal context. The
+statistical distributions of subtask-specific entities and question
+intents are reported in Figures 3b and 3c, respectively.
+Single-frame VQA: Given a single cab-view (first-person)
+image I ∈ RH×W ×3 , the model must identify key visual
+elements and infer the appropriate operational command according to railway features. The main task is to accurately
+ground visual evidence in rules and regulatory constraints to
+produce a compliant operation suggestion.
+Multi-frame VQA: The input video is a sequence of T
+frames S = {I1 , I2 , ..., IT } with a question, and the model
+must track dynamic objects over time and discriminate benign
+background motion (e.g., passengers on a platform) from
+hazardous intrusions (e.g., pedestrians entering the tracks).
+
+4
+
+Task Ⅰ: Static Single-Frame VQA
+Input: Diverse Single-frame Scene (𝐼) + Compliance Query (𝑄)
+Structured Output ℱ 𝐼, 𝑄 → {𝒞𝓅ℯ𝓇𝒸 , 𝒞𝓇ℯ𝒶𝓈 , 𝒞𝓅𝓁𝒶𝓃 , 𝒜𝒻𝒾𝓃𝒶𝓁 }
+
+Rule-based Compliance
+1. Perception (𝓒𝓹𝓮𝓻𝓬 )
+Detected objects and red signal light.
+Snow weather
+
+Tunnel
+
+City Railway
+
+2. Reasoning (𝓒𝓻𝓮𝓪𝓼 )
+Red signal indicates “STOP” based on SOP rules.
+3. Planning (𝓒𝓹𝓵𝓪𝓷 )
+Apply standard braking and wait.
+
+What is the signal status?
+Is the way accessible?
+
+Night
+
+Railway station
+
+Fog weather
+
+4. Final Answer (𝓐𝓯𝓲𝓷𝓪𝓵 )
+Red signal, stop and wait.
+
+Task Ⅱ: Dynamic Multi-Frame VQA
+Input: Kinematic Multi-frame Sequence (𝑆) + Action Comprehension Query (𝑄)
+Time
+
+Kinematic Risk Assessment
+
+Structured Output ℱ 𝑆, 𝑄 → {𝒞𝓅ℯ𝓇𝒸 , 𝒞𝓇ℯ𝒶𝓈 , 𝒞𝓅𝓁𝒶𝓃 , 𝒜𝒻𝒾𝓃𝒶𝓁 }
+1. Perception (𝓒𝓹𝓮𝓻𝓬 )
+Pedestrians detected and tracking movement on track.
+
+2. Reasoning (𝓒𝓻𝓮𝓪𝓼 )
+
+Train high momentum and short braking distance creates
+imminent collision risk.
+
+3. Planning (𝓒𝓹𝓵𝓪𝓷 )
+Apply emergency braking and sound warning.
+
+4. Final Answer (𝓐𝓯𝓲𝓷𝓪𝓵 )
+
+Is there an immediate kinematic hazard?
+If so, what is the required response?
+
+There is an imminent hazard, apply emergency brake.
+
+Fig. 2. This figure presents the standardized input–output schemas for the benchmark’s two core subtasks: Static Single-frame VQA and Dynamic Multi-frame
+VQA. Given a visual input—either a single frame I or a video sequence S—and its associated question Q, the model output is required to follow a predefined,
+structured chain-of-thought (CoT) format.
+
+It also requires physical commonsense reasoning that reflects
+the train’s high momentum and one-degree-of-freedom motion
+constraint, so as to be able to assess the risk based on the
+relative distance and speed, and support emergency decisions
+beyond single-frame recognition.
+Structured Chain-of-Thought (CoT) Output: To improve
+interpretability and enable standardized evaluation, both tasks
+require responses in a structured chain-of-thought (CoT) format. Formally, given a visual input V (either a single-frame
+image I or a frame sequence S) and a question Q, the model
+learns a function F that produces:
+
+high-quality frames selected from RailGoerl24. Together, they
+cover diverse environmental conditions (e.g., illumination and
+weather) and operational contexts (e.g., urban tramways and
+high-speed rail).
+Dynamic Scenario Collection: To evaluate temporal reasoning in train operations, we further process the video data
+in RailGoerl24. Using temporal segmentation and semantic
+re-labeling, we restructure the raw streams into 584 dynamic
+scenarios capturing safety-critical events such as intrusions
+and signal-state transitions, which form the basis of our crossframe reasoning tasks.
+
+F(V, Q) → {Cperc , Creas , Cplan , Af inal }
+
+C. Automatic QA Generation Pipeline
+Following the automated benchmark construction paradigm
+of Space-LLaVA [45], we develop an automated QA generation pipeline using Qwen-VL-Max [46] as the teacher model.
+It is selected for its fine-grained visual grounding and its robust long-context modeling for multi-frame temporal analysis.
+Through rigorous prompting, we generate explicit Chain-ofThought (CoT) annotations and extract multiple queries per
+visual input. By creating one open-ended question and one
+multiple-choice question for each static image and each video
+clip, we systematically expand the raw 10,000 images and 584
+video clips into 20,000 static QA pairs and 1,168 dynamic QA
+pairs. See Appendix A for prompting details.
+
+(1)
+
+where Cperc summarizes salient visual evidence (e.g., signal
+aspect), Creas denotes logical/physical inference, Cplan represents decision-oriented inference, and Af inal is the final
+concise answer. This structure enforces explicit reasoning
+stages and enables fine-grained evaluation of model.
+B. Dataset Collection
+To construct a comprehensive and diverse benchmark for
+railway visual reasoning, we build RailVQA-bench by integrating and strictly filtering two public datasets: RailSem19 [3]
+and RailGoerl24 [5]. The collection protocol targets two
+core capabilities: (i) single-frame scene understanding and (ii)
+cross-frame temporal reasoning.
+Static Scenario Collection: For single-frame asset recognition and hazard identification, we compile a large-scale static
+subset consisting of 8,500 images from RailSem19 and 1,500
+
+D. Dataset Validation
+To ensure annotation quality, we adopted a validation protocol tailored to the two subtasks. Because multi-frame reasoning is difficult to generate and verify reliably, we manually
+
+5
+
+ 1 X P E H U  R I  6 D P S O H V
+
+    
+
+ 0 H D Q      
+ 0 H G L D Q      
+
+ ( Q W L W L H V    . H \ Z R U G V
+
+    
+
+    
+    
+   
+   
+   
+ 
+
+                                 
+
+ 7 R W D O  & K D U D F W H U  / H Q J W K
+  3 H U F H S W L R Q    5 H D V R Q L Q J    3 O D Q Q L Q J 
+
+(a) Distribution of CoT Lengths
+
+Question Intents
+
+ . H \  5 D L O Z D \  ( Q W L W L H V
+
+ & R 7  / H Q J W K  ' L V W U L E X W L R Q
+ W U D F N
+ V L J Q D O
+ W U D L Q
+ V S H H G
+ V W R S
+ Z H D W K H U
+ R Y H U K H D G
+ F U R V V L Q J
+ V W D W L R Q
+ F D W H Q D U \
+
+      
+      
+      
+      
+
+7.1%
+
+      
+      
+      
+      
+      
+      
+ 
+
+      
+
+42.3%
+
+48.1%
+Action & Planning
+Option Selection
+
+      
+
+ ) U H T X H Q F \  R I  2 F F X U U H Q F H
+
+(b) Distribution of Key Railway Entities
+
+Perception & State
+Others
+
+(c) Question Intents Distribution
+
+Fig. 3. Comprehensive statistical overview of the RailVQA-bench dataset. (a) shows the distribution of generated CoT character lengths, reflecting
+the benchmark’s emphasis on logic-intensive reasoning. (b) reports the occurrence frequencies of key railway entities, demonstrating broad domainspecific coverage. (c) summarizes the distribution of question intents, indicating a primary focus on action planning and safety-related decisions
+rather than simple perception.
+
+reviewed the entire dynamic subset, correcting minor issues
+and removing samples with substantial errors. Given the larger
+scale and relative simplicity of the static subset, we conducted
+statistical quality control by auditing 1,000 instances. This
+audit yielded a pass rate exceeding 95%, indicating high
+annotation fidelity and providing further evidence for the
+trustworthiness of our automated generation process for the
+static subset.
+E. Evaluation Methodology
+To assess high-level reasoning and decision-making on
+RailVQA-bench, we adapt the rubric-based protocol of
+DriveLMM-o1 [35] - originally developed for autonomous
+driving - to the railway domain. The resulting framework
+defines 12 semantic dimensions (Table VI) and aims to evaluate the qualities of perception and reasoning in train-driving
+scenarios.
+We further adopt an LLM-as-a-Judge [47] setting to evaluate
+the semantic quality of predicted CoTs. Specifically, we use
+Qwen3-Max [24] as the judge model to compare model outputs against manually revised references, leveraging its strong
+instruction following and logical reasoning. Prior work reports
+strong agreement between large-model judges and human
+experts on NLP benchmarks [48]. Moreover, this paradigm
+has been increasingly adopted in recent top-tier studies on
+autonomous driving [30], [32] and visual reasoning (VQA).
+IV. R AILVQA-C O M: C OLLABORATIVE L ARGE -S MALL
+M ODELS F RAMEWORK
+This section introduces RailVQA-CoM, a collaborative
+framework designed to better accommodate dynamic multiframe scenarios. In addition, to evaluate spatial understanding
+ability, we adopt a lightweight RailVQA-CoM variant that
+retains the small-model perception module and the LMMbased cognitive inference module for static scenarios. In both
+settings, the input is a query paired with either a video clip or
+a single image.
+
+A. Small Model Perception Module
+This module focuses on the rapid and precise acquisition
+of structured visual primitives from the raw video stream or a
+static image.
+Customized Railway Detector. To balance efficiency and
+domain accuracy, we adopt YOLO26m [49] as the backbone
+detector. We fine-tune it on RailSem19 and extend the label
+space with additional manual annotations for common nonrailway obstacles (e.g., pedestrians and vehicles), enhancing
+its generalization ability.
+State Estimation and Tracking. We employ ByteTrack [50] for multi-object tracking. By associating detections
+across frames using IoU (Intersection over Union) and motion
+consistency, ByteTrack assigns each target a persistent identity
+id, ensuring cross-frame identity continuity.
+Output and Visual Enhancement. For each frame t, the
+module outputs a structured detection set:
+Bt = {(x1 , y1 , x2 , y2 , c, id)i | i ∈ Ot }
+
+(2)
+
+where (x1 , y1 , x2 , y2 ) are bounding-box coordinates, c is the
+semantic class, id is the tracking identity, and Ot represents
+the set of all active tracked objects. We also add the sequence
+index (e.g., “Seq: t/T ”) on each frame to provide an explicit
+temporal anchor for the downstream LMM.
+
+B. Motion Analysis and Memory Log Module
+This module is designed specifically to handle dynamic
+multi-frame scenarios. It converts visual information into
+temporally coherent, physically meaningful semantics within
+a memory log.
+Multi-dimensional Motion Estimation. For each tracked
+target i, we compute an instantaneous 2D motion vector from
+its center Cti = (xc , yc )t over an interval ∆t:
+vti =
+
+i
+Cti − Ct−∆t
+= (vx , vy )
+∆t
+
+(3)
+
+6
+
+TABLE I
+C OMPARISON OF R AILVQA- BENCH WITH RELATED DATASETS . E XISTING DATASETS SUCH AS OSDA R23 [4] AND S YN R AIL O BS [14] PRIMARILY
+ADVANCE PERCEPTION ( E . G ., VIA MULTI - SENSOR FUSION OR SYNTHETIC DATA GENERATION ) BUT PROVIDE LIMITED HIGH - LEVEL COGNITIVE
+ANNOTATIONS . R AILVQA- BENCH ADDRESSES THIS LIMITATION BY EXPLICITLY COUPLING PERCEPTION WITH REASONING AND PLANNING .
+
+Modality
+Static
+Dynamic
+
+Annotations
+Q&A
+Logic (CoT)
+
+Dataset
+
+Year
+
+RailSem19 [3]
+OSDaR23 [4]
+RailGoerl24 [5]
+SynRailObs [14]
+
+2019
+2023
+2024
+2025
+
+✓
+✓
+✓
+
+✓
+✓
+-
+
+✓
+✓
+✓
+✓
+
+-
+
+-
+
+Sem. Seg. & Detection
+Multi-sensor Perception
+Visual Tracking
+Synthetic Obstacle Detection
+
+DriveLM [30](Auto Driving)
+
+2023
+
+✓
+
+✓
+
+✓
+
+✓
+
+✓
+
+Vehicle Driving Reasoning
+
+RailVQA-bench (Ours)
+
+2026
+
+✓
+
+✓
+
+✓
+
+✓
+
+✓
+
+Perception & Reasoning
+
+Bbox/Mask
+
+Furthermore, to capture depth-wise movement (e.g., objects
+approaching the train along the tracks), we introduce the Area
+Change Rate ρit . This rate is defined as
+ρit =
+
+Ait − Ait−∆t
+Ait−∆t
+
+(4)
+
+where Ait is the area calculated by bounding box in frame t.
+Kinematic State Inference. To filter out perceptual noise
+while retaining sensitivity to critical hazards, we employ a
+dual-threshold gating mechanism. Besides area change rate,
+we use an adaptive threshold conditioned on the boundingbox width wi :
+τdyn = max(τmin , λ · wi )
+
+(5)
+
+where τmin is a baseline noise floor and λ controls scale
+adaptation. The kinematic state is defined as
+(
+M oving, if ||vti || ≥ τdyn or |ρit | > γ
+Stateit =
+(6)
+Static,
+otherwise
+A target is classified as Moving if either its spatial displacement exceeds the dynamic threshold τdyn or its absolute area
+change rate |ρit | surpasses a sensitivity constant γ.
+Identity Track Maintenance. To address track fragmentation caused by transient occlusions or detector false negatives,
+we introduce a robust Spatio-temporal ID mechanism. This
+approach actively re-associates newly detected, unmatched
+objects (denoted as dj ) with recently lost identities (denoted
+as i∗ ) by evaluating a joint spatio-temporal constraint C. Here
+is the explanation of constraint C:
+
+∗
+
+Class(dj ) = Class(i ), and
+∗
+∗
+i
+C(dj , i ) ⇐⇒ t − tlast ≤ δtol , and
+(7)
+
+ j
+i∗
+||Ct − Clast ||2 < θ
+When a target disappears, it is maintained in a short-term
+buffer for a tolerance period δtol . If a new detection of the
+same class appears within this window, identity recovery is
+triggered based on a scale-aware spatial search radius θ =
+max(2·wj , λmin ). This dynamic association ensures temporal
+continuity across complex scenes.
+
+Task Focus
+
+C. Large Model Cognitive Inference Module.
+We introduce three mechanisms for efficient and interpretable LMM training-free inference:
+Dynamic Budget Allocation and Adaptive Sampling.
+To mitigate computational overhead and context dilution, we
+applied an event-driven dynamic budget allocation mechanism.
+For a sequence of length T , we first compute a heuristic
+event score st for each frame based on the intensity of
+dynamic events (e.g., object appearances, significant spatial
+displacements).
+The overall scene complexity is aggregated as
+PT
+S = t=1 st .
+The system dynamically assigns an effective frame budget
+K ≤ Kmax based on the scene complexity:
+
+
+if S ≥ τhigh
+Kmax ,
+(8)
+K = max(3, ⌊α · Kmax ⌋), if τlow ≤ S < τhigh
+
+
+2,
+if S < τlow
+where τlow and τhigh are complexity thresholds, dynamically
+set based on the complexity score distribution calculated on a
+calibration set using our perception and motion analysis mechanisms. This mechanism facilitates easy threshold adjustment
+across different datasets or scenarios. And α is a scaling factor.
+Finally, to extract the most informative moments, the sequence is divided into K −1 temporal segments. The frame t∗k
+with the highest local score st within each segment is selected
+as a keyframe. The final set T ∗ = {t∗1 , . . . , t∗K−1 , T } includes
+the last frame to anchor the current visual state.
+Multi-modal Fusion and Defensive Prompting. We construct the multi-modal prompt by concatenating the keyframes
+T ∗ with the structured textual logs and query. Yet, because
+introduced lightweight perception detectors inherently struggle
+with out-of-distribution (OOD) anomalies, we implement a
+Defensive Prompting mechanism. When the log consecutively
+outputs a “No objects” state, the system dynamically injects a
+fallback instruction, forcing the LMM to disregard the empty
+log and rely exclusively on its own visual comprehension to
+detect atypical hazards.
+Structured Chain-of-Thought (CoT) Generation. Finally,
+we embed a structured Chain-of-Thought (CoT) template into
+the system prompt. This instruction guides the LMM to
+articulate its perceiving-reasoning-planning steps, enhancing
+the interpretability and transparency of system response.
+
+7
+
+TABLE II
+Q UANTITATIVE COMPARISON ON THE DYNAMIC S CENE VQA TASK . (↑) INDICATES HIGHER IS BETTER , WHERE THE CRITERIA OF SCORING ARE LISTED
+IN APPENDIX . N OTE THAT S YSTEM TPS MEASURES THE EFFECTIVE TOKEN GENERATION RATE OVER THE ENTIRE SYSTEM .
+
+InternVL3.5
+
+Qwen3-VL
+
+Method
+
+CQ Acc. (%)
+
+Overall Score
+
+Physics & Mom. (↑)
+
+Risk Assess. (↑)
+
+Rule Adhere. (↑)
+
+Details (↑)
+
+Hallucination (↑)
+
+S-TPS (↑)
+
+LMM Only
+Unadapted Detector
+Uniform Samples
+RailVQA-CoM
+
+67.16
+60.45
+74.80
+75.43
+
+60.60
+52.50
+66.73
+67.92
+
+69.4
+67.6
+75.2
+75.3
+
+54.4
+41.1
+58.8
+55.7
+
+71.6
+71.5
+80.1
+79.9
+
+53.0
+43.9
+59.6
+59.2
+
+53.8
+51.6
+61.0
+71.4
+
+5.80
+13.32
+11.54
+17.06
+
+LMM Only
+Unadapted Detector
+Uniform Samples
+RailVQA-CoM
+
+84.36
+82.17
+82.53
+84.93
+
+71.01
+71.80
+74.00
+76.64
+
+78.9
+81.3
+80.6
+81.8
+
+63.8
+64.7
+68.4
+68.1
+
+79.6
+85.4
+84.8
+86.4
+
+54.8
+58.9
+66.5
+67.4
+
+71.5
+71.0
+74.4
+81.2
+
+6.04
+9.25
+8.16
+10.34
+
+V. E XPERIMENTS
+A. Experiment Setup
+Baselines and Evaluation Setting. To demonstrate the
+model-agnostic properties of our proposed framework, we
+selected four mainstream open-source LMMs with varying
+parameter scales: Qwen3-VL-Instruct-8B [46], InternVL3.58B [51], LLaVA-1.5-7B [23], LLaMA3-vision-11B [52].
+All experiments are conducted on RailVQA-bench instead
+of conventional railway datasets (e.g., RailSem19 [3] and
+OSDaR23 [4]), as the latter are designed mainly for low-level
+perception tasks, thus do not provide the QA supervision or
+reasoning annotations.
+To unify the evaluation of the overall score, the ratings for
+Hallucination, Missing Step, Missing details are scaled such
+that higher scores represent better performance. Please refer
+to Table VI in Appendix for specific scoring details.
+We consider two baseline configurations for comparison:
+1) LMM Only: The LMM model answers user queries
+directly from raw static images or video frames, relying
+solely on its pre-trained zero-shot capability without external
+perceptual priors.
+2) Unadapted Detector: This setting preserves the full
+temporal pipeline but replaces the perception module with
+a standard, unfine-tuned YOLO26m detector, isolating the
+contribution of domain adaptation in the perception module
+from that of the reasoning middleware.
+3) Uniform Samples: This configuration utilizes the complete RailVQA-CoM framework but disables the dynamic
+budget allocation. It equidistantly extracts a fixed number
+(equal to the maximum frame of the dynamic sampling) of
+frames across the temporal sequence.
+4) RailVQA-CoM (Ours): Our proposed framework, which
+integrates domain-adapted YOLO26m-Rail perception to support the LMM’s cognitive reasoning.
+Implementation Details. Experiments were conducted with
+four NVIDIA RTX A6000 GPUs. We fine-tuned only the
+YOLO26m [49] detector on our generalization-enhanced railway dataset, while keeping the LMM frozen to preserve
+generality. For evaluation, we used Qwen3-Max to score
+the generated chain-of-thought (CoT) outputs across the 12
+semantic dimensions defined in RailVQA-bench.
+B. Dynamic Scene Inference Experiments.
+Experimental Setting To systematically evaluate our proposed framework in multi-frame (video clip) reasoning and
+
+efficiency, we introduce system-level metric: System TPS (STPS) [53], which is defined as the total number of generated tokens divided by the end-to-end latency of the entire
+large–small model framework.
+
+  
+
+ 5 D L O 9 4 $  & R 0
+
+  
+
+ 2 Y H U D O O  6 F R U H
+
+LMM
+
+  
+ / 0 0  2 Q O \
+
+  
+
+ 5 D L O 9 4 $  & R 0
+
+  
+  
+  
+  
+  
+
+ / 0 0 V
+
+ , Q W H U Q 9 /   
+ 4 Z H Q   9 /
+
+ / 0 0  2 Q O \
+
+ 
+
+ 
+
+  
+
+  
+
+  
+
+  
+
+ ( Q G  W R  ( Q G  7 R N H Q  * H Q H U D W L R Q  6 S H H G   6  7 3 6 
+Fig. 4. Performance-efficiency comparison in dynamic scenarios. RailVQACoM achieves simultaneous substantial gains, pushing the performance towards the top-right by increasing end-to-end throughput and enhancing
+cognitive scores.
+
+Results and Analysis. As visually demonstrated in
+Fig. 4, RailVQA-CoM successfully improves the performanceefficiency ability of the LMM Only baseline, propelling both
+models from the suboptimal lower-left toward the optimal
+top-right quadrant. Table II quantitatively confirms this dual
+breakthrough. On the efficiency front, adaptive keyframe sampling effectively increases the LMM reasoning throughput, for
+example InternVL3.5’s QA speed surges from 5.80 to 17.06
+S-TPS, which has even increased by three times. On the cognitive front, the results demonstrate profound improvements in
+dynamic hazard anticipation, driving Physics & Momentum
+score from 69.4 to 75.3 in InternVL3.5, and Hallucination
+Score from 53.8 to 71.4. Overall, compared to traditional
+approaches, our framework demonstrates a capability improvement in processing continuous dynamic visual streams.
+C. Static Scene Inference Experiments
+Experimental Setting. To evaluate spatial understanding
+and rule compliance in static frame, we apply a lightweight
+Visual Prompting mechanism for the RailVQA-CoM and
+Unadapted Detector configurations, bypassing the temporal
+
+8
+
+TABLE III
+Q UANTITATIVE COMPARISON ON THE S TATIC S CENE VQA TASK . W E REPORT A COMPREHENSIVE SUITE OF FINE - GRAINED METRICS TO QUANTIFY
+COGNITIVE IMPROVEMENTS . (↑) INDICATES HIGHER IS BETTER .
+LMM
+
+Method
+
+Overall Score
+
+CQ Acc. (%)
+
+Faithfulness (↑)
+
+Risk Assess. (↑)
+
+Rule Adherence (↑)
+
+Object Underst. (↑)
+
+Hallucination (↑)
+
+Details (↑)
+
+LLaVA-1.5
+
+LMM Only
+Unadapted Detector
+RailVQA-CoM
+
+69.82
+71.10
+71.48
+
+72.20
+75.81
+74.90
+
+68.1
+69.0
+70.0
+
+69.1
+70.0
+70.5
+
+70.9
+71.7
+72.5
+
+67.7
+69.1
+69.7
+
+76.1
+79.0
+78.8
+
+60.8
+61.8
+63.0
+
+LLaMA3-Vision
+
+LMM Only
+Unadapted Detector
+RailVQA-CoM
+
+65.72
+66.57
+67.00
+
+81.68
+80.56
+80.74
+
+67.2
+65.5
+63.8
+
+65.4
+66.3
+66.7
+
+67.2
+68.5
+70.5
+
+62.1
+63.5
+63.0
+
+70.5
+73.4
+74.2
+
+57.7
+58.2
+58.6
+
+InternVL3.5
+
+LMM Only
+Unadapted Detector
+RailVQA-CoM
+
+71.04
+73.20
+74.08
+
+78.10
+81.55
+82.40
+
+74.5
+74.4
+76.5
+
+73.6
+71.7
+75.8
+
+75.1
+76.6
+77.0
+
+73.3
+68.9
+74.4
+
+71.7
+79.5
+82.1
+
+61.0
+62.4
+65.2
+
+Qwen3-VL
+
+LMM Only
+Unadapted Detector
+RailVQA-CoM
+
+74.81
+72.20
+75.74
+
+85.20
+86.10
+86.40
+
+76.3
+70.7
+74.3
+
+74.9
+73.0
+75.3
+
+78.2
+75.5
+79.3
+
+71.2
+68.1
+72.8
+
+81.1
+81.7
+87.9
+
+64.9
+60.1
+67.8
+
+TABLE IV
+C ROSS - DOMAIN GENERALIZATION ON THE D RIVE LMM- O 1 BENCHMARK FOR AUTONOMOUS DRIVING .
+Method
+
+LMM
+
+Overall Score
+
+CQ Acc. (%)
+
+Faithfulness (↑)
+
+Risk Assess. (↑)
+
+Rule Adhere. (↑)
+
+Scene Aware. (↑)
+
+Hallucination (↑)
+
+Details (↑)
+
+DriveLMM-o1
+
+InternVL-2.5
+Qwen2.5-VL
+
+57.48
+56.63
+
+54.11
+51.14
+
+49.84
+47.43
+
+52.55
+53.08
+
+67.22
+68.52
+
+54.67
+49.91
+
+51.20
+50.96
+
+51.69
+51.70
+
+RailVQA-CoM
+
+DriveLMM-o1(Qwen2.5-VL)
+
+58.89
+
+54.57
+
+48.66
+
+52.88
+
+68.07
+
+56.48
+
+52.81
+
+53.77
+
+TABLE V
+A BLATION STUDY OF CORE COMPONENTS .
+Variant
+w/o adaptive sampling
+w/o event stream log
+Full RailVQA-CoM
+
+Overall Score
+
+CQ Acc. (%)
+
+Risk Assess. (↑)
+
+Physics & Mom. (↑)
+
+Object Underst. (↑)
+
+Semantic Cov. (↑)
+
+Hallucination (↑)
+
+Details (↑)
+
+74.00
+64.67
+76.64
+
+82.53
+78.80
+84.93
+
+68.4
+56.5
+68.1
+
+80.6
+76.9
+81.8
+
+72.1
+58.3
+74.3
+
+63.8
+56.6
+71.0
+
+74.3
+60.3
+81.2
+
+66.5
+57.2
+67.4
+
+modules. Specifically, bounding boxes and semantic labels
+from the perception module are rendered onto the RGB image.
+This augmented image, alongside a customized Chain-ofThought prompt, is then fed into the LMM.
+Results and Analysis. As shown in Table III, RailVQACoM consistently achieves the highest Overall Score and CQ
+Accuracy across all baselines.
+Comparing the LMM Only with the Unadapted Detector demonstrates the fundamental benefit of RailVQA-CoM
+framework. Explicitly overlaying bounding boxes successfully
+anchors the LMM’s attention, significantly reducing hallucinations (e.g., the Hallucination score of InternVL3.5 jumps from
+71.7 to 79.5). However, the un-finetuned Unadapted Detector
+struggles with railway-specific assets. Its generic bounding
+boxes can mislead the LMM, causing a noticeable drop in
+specialized metrics like Object Understanding (e.g., from 71.2
+down to 68.1 for Qwen3-VL).
+RailVQA-CoM resolves this bottleneck by deploying the
+domain-adapted YOLO26m-Rail. This confirms that domainspecific visual cues are essential for reliable LMM reasoning
+in railway scenarios.
+D. Cross-domain Generalization
+To verify that our collaborative paradigm extends beyond
+the railway domain, we evaluated its generalization on the
+autonomous vehicle driving benchmark, DriveLMM-o1 [35].
+The original DriveLMM-o1 method utilizes domain-specific
+
+models, where the InternVL-2.5 variant reported higher scores
+than the Qwen2.5-VL variant on their specific benchmark. To
+demonstrate the effectiveness of our framework, we deliberately wrapped the lower-scoring Qwen2.5-VL model within
+RailVQA-CoM to provide it with explicit perceptual priors.
+As shown in Table IV, the integration yields compelling
+improvements. Empowered by RailVQA-CoM, the Qwen2.5VL model not only achieves a significant performance leap
+over its original baseline, but also completely surpasses the
+stronger InternVL-2.5 expert model. Notably, its Scene Awareness score surges from 49.91 to 56.48, lifting the Overall Score
+to 58.89. This confirms that our proposed paradigm serves as a
+versatile and LMM training-free framework that can integrate
+with and enhance the performance of LMMs across diverse
+autonomous driving scenarios.
+E. Ablation Study
+To validate the necessity of Event Stream Log and Adaptive
+Temporal Sampling in our dynamic design, we conduct an
+ablation study on Qwen3-VL-8B. This classical model was
+chosen to represent our framework’s capabilities; identical
+performance degradation trends were observed across the other
+baselines when these modules were removed.
+Fig. 5 and Table V show that both components are critical.
+Removing the Event Stream Log reduces the Overall Score
+to 64.67, largely due to sharp drops in Operational Risk
+Assessment (56.5). Without explicit velocity cues, the model
+
+9
+
+  
+
+ 2 Y H U D O O  6 F R U H
+
+ 6 F R U H V
+
+  
+
+ 3 K \ V L F V  	  0 R P H Q W X P
+
+    
+
+    
+
+  
+  
+
+ 5 L V N  $ V V H V V P H Q W
+
+    
+
+    
+    
+
+    
+    
+
+    
+
+  
+  
+
+    
+
+ Z  R  $ G D S W L Y H
+ 6 D P S O L Q J
+
+ Z  R  ( Y H Q W
+ 6 W U H D P  / R J
+
+This is an extreme edge case, shown in Fig. 6(b), rare
+in actual ATO operations, which serves as a rigorous stress
+test for handling out-of-distribution (OOD) anomalies by the
+RailVQA-CoM framework.
+Triggered Middleware Status (Perception Log + Warning):
+Frame 1: No objects.
+Frame 2: No objects.
+...
+Frame 20: No objects.
+
+  
+  
+
+2) Case 2: Zero-Shot Anomaly Detection
+
+ ) X O O  5 D L O 9 4 $  & R 0
+
+Fig. 5. Ablation study of the core middleware components of RailVQA-CoM.
+To intuitively demonstrate the impact of each module on model performance,
+we extract three representative metrics (Overall Score, Risk Assessment, and
+Physics & Momentum) from the ablation table to construct this bar chart.
+
+fails to maintain temporal continuity and cannot reliably
+anticipate collision risk. Replacing Adaptive Sampling with
+uniform sampling also degrades the Missing Details score,
+indicating that motion-saliency-driven selection is important
+for capturing key hazard moments.
+F. Qualitative Results
+We provide two case studies (Fig. 6) to illustrate how
+RailVQA-CoM produces transparent, step-by-step reasoning
+and mitigates the impact of worthless inputs.
+1) Case 1: Dynamic Intrusion and Track Maintenance
+As illustrated in Fig. 6(a), the small detector captures
+the targets, and our motion analysis module robustly handles transient tracking losses via track maintenance. As
+shown in the generated logs below, temporarily occluded
+targets are successfully preserved in the event stream with
+[Occluded/Lost] descriptors, maintaining a complete
+spatial-temporal stream.
+Generated Perception Log (Middleware Output Snippet):
+...
+Frame 15: person (ID:4) at [40,230,112,433]
+... Motion: moving left | ... | person (ID:1)
+[Occluded/Lost] predicted at approx [1916, 1024]
+Frame 16 to Frame 20: person (ID:4) at
+[31,229,109,433] ... Motion: moving left | ...
+| person (ID:1) [Occluded/Lost] predicted at
+approx [1428, 565]
+
+RailVQA-CoM Output (LMM Structured CoT):
+Question: What dynamic trend is observed in the pedestrian movement across the railway tracks?
+Perceiving: Multiple individuals are moving along the
+railway tracks. The perception log confirms their motion
+is consistently rightward and slightly downward.
+Reasoning: The motion vectors in the log indicate a clear,
+continuous movement away from the camera’s viewpoint.
+Track intrusion poses an extreme collision risk.
+Planning: Immediate action required for train: activate
+emergency brakes/signals and alert railway personnel.
+Final Answer: The pedestrians are moving in a continuous, coordinated flow from left to right across the railway
+tracks.
+
+--- AUTOMATED DETECTOR STATUS: UNRELIABLE --System Report: The automated object detector found
+NO standard targets (People/Cars).
+CRITICAL WARNING: The detector often FAILS to see
+non-standard obstacles (e.g., Bicycles, Rocks,
+Debris).
+INSTRUCTION: IGNORE the detector’s claim of ’No
+objects’. You MUST rely SOLELY on the Visual
+Images to find anomalies.
+
+Under this fallback mechanism, the LMM disregards the
+unreliable log and instead relies on its inherent zero-shot
+visual grounding to identify the obstacles, thereby inferring
+the imminent collision hazard and the consequent derailment
+risk.
+RailVQA-CoM Output (LMM Structured CoT):
+Question: What dynamic event is occurring on the railway
+tracks in the sequence?
+Perceiving: The visual sequence shows a bicycle lying
+across the left rail of the tracks, positioned in the path
+of travel.
+Reasoning: As the train progresses along the tracks, it will
+inevitably encounter the stationary bicycle lying across the
+rails. This presents a severe and immediate hazard, as the
+bicycle will be struck, posing a significant risk of the train.
+Planning: The system must flag this as a critical safety
+violation requiring immediate intervention to remove the
+obstacles from the tracks.
+Final Answer: A stationary bicycle is illegally placed on
+the active railway tracks, creating a severe safety hazard.
+
+VI. C ONCLUSION
+We present RailVQA-bench, the first VQA benchmark to
+comprehensively evaluate both static and dynamic, safetycritical kinematic reasoning for cab-view visual cognition in
+ATO, and RailVQA-CoM, an efficient large–small collaborative framework that supports a model-agnostic architecture
+for LMM deployment. By decoupling high-frequency perception from complex reasoning, our approach simultaneously
+improves computational efficiency and cognitive accuracy for
+LMMs. In critical dynamic scenarios, it increases end-toend throughput per second about 3 times, while effectively
+overcoming context dilution and hallucinated reasoning. Overall, this work preliminarily advances reliable and efficient
+cognitive intelligence for railway automation.
+VII. L IMITATIONS
+Although our framework substantially improves visual reasoning, it currently relies solely on monocular vision and
+does not incorporate multi-sensor fusion (e.g., LiDAR or
+millimeter-wave radar). Such fusion remains essential for accurate 3D depth estimation and robust all-weather perception.
+
+10
+
+(a) Case 1: Dynamic Intrusion with Multi-Object Tracking.
+
+(b) Case 2: Zero-Shot Anomaly Detection (Defensive Fallback).
+
+Fig. 6. Qualitative results of the RailVQA-CoM framework. (a) Case 1: The perception module tracks pedestrians and handles transient occlusions via track
+maintenance, preserving spatial-temporal context for the LMM. (b) Case 2: When the detector misses an out-of-distribution obstacle (bicycle), the system
+triggers a defensive fallback, prompting the LMM to identify the hazard via zero-shot visual reasoning.
+
+Future work will focus on integrating complementary sensing
+modalities to address these limitations.
+Furthermore, it is worth noting that current Large Multimodal Models still exhibit certain latency limitations. Although our collaborative framework brings noticeable efficiency improvements, directly deploying such large-scale
+models in Automatic Train Operation may still face practical
+latency constraints. We believe that future advances in LMMs
+will help alleviate this problem, and we also plan to investigate
+model acceleration techniques to further mitigate it.
+
+Interpret the visual data based...",
+"cot_planning": "Action plan:
+Determine the immediate driving...",
+"qa_question": "A critical,
+scenario-specific question...",
+"qa_answer": "A detailed answer
+based on the analysis.",
+"mc_question": "A multiple-choice
+question focusing on specific...",
+"mc_options": {
+"A": "Option text",
+"B": "Option text", ...
+},
+"mc_correct": "The correct option
+letter (e.g., ’A’)"
+
+A PPENDIX
+P ROMPT E NGINEERING D ETAILS
+To ensure the reproducibility of our methodology and provide transparency into the behavior of the Large Multi-modal
+Model (LMM), we report the core prompts used in the three
+main phases of our study: dataset generation, collaborative
+inference, and automated evaluation.
+(I) P ROMPT FOR AUTOMATIC QA G ENERATION
+To construct high-quality and domain-specific logical
+Question-Answering pairs for RailVQA-bench. We employed
+a strict system prompt to establish a professional persona
+and a structured user prompt to enforce the output format,
+constraining the output to a predefined JSON schema.
+System Prompt (Persona Definition):
+You are a Senior Railway Operation Expert and Instructor. Your task is to analyze images from the cab
+view and generate professional question-answering
+data for an automatic train operation system.
+User Prompt (Task and Structural Constraint):
+Analyze the provided train cab-view image. Generate
+one Question-Answer (QA) pair and one Choice
+Question (CQ).
+Strictly output valid JSON with no Markdown formatting (do not use json). Use the following structure:
+{
+"cot_perception": "Visual analysis:
+Identify signals (aspect/color)...",
+"cot_reasoning": "Logical analysis:
+
+}
+(II) P ROMPT FOR R AILVQA-C O M C OGNITIVE
+I NFERENCE
+In the RailVQA-CoM framework, the LMM serves as the
+cognitive brain. The prompt fuses textual spatial-temporal logs
+generated by the Small Model Perception Module with visual
+keyframes. We carefully designed the instructions to prioritize
+visual evidence and enforce the structured reasoning pipeline.
+System Prompt (multi-modal Fusion and CoT Enforcement):
+You are a railway safety analysis system. Analyze
+visual inputs (images) and object tracking logs to
+provide a professional safety assessment.
+Each image has a visual timestamp (e.g., ’Seq:
+5/20’) in the top-left corner.
+Input Data Instructions:
+1. Images (PRIMARY SOURCE): The raw visual
+truth. Trust the images at first.
+2. Perception Log (SECONDARY SOURCE):
+Generated by a weak detector, may contain errors
+or omissions. Use it as a reference but verify
+against images.
+3. Coordinate: Coordinate Origin (0,0) is Top-Left.
++X=Right, +Y=Down, corresponds to instantaneous
+motion of objects in logs.
+
+11
+
+TABLE VI
+D ETAILED SCORING RUBRIC FOR THE 12 EVALUATION METRICS ( SCORE RANGE : 1–10). I N THE EXAMPLES BELOW, E XCELLENT CORRESPONDS TO
+SCORES OF 9–10, WHEREAS P OOR CORRESPONDS TO SCORES OF 1–2.
+
+Metric
+
+Evaluation Focus
+
+Scoring Criteria Examples (Excellent vs. Poor)
+
+1. Faithfulness-Step
+
+Alignment with Ground Truth and Standard Operating Procedures (SOPs).
+Completeness of reasoning regarding train status
+and environment.
+Prioritization of high-risk hazards (distinguishing
+safe surroundings vs. intrusions).
+Compliance with Railway General Operating
+Rules and Signal Systems.
+Interpretation of railway assets and spatial location of dynamic objects.
+
+Excellent: All steps correctly match reference SOPs.
+Poor: Majority of steps contradict ground truth.
+Excellent: Captures all critical info (Signals, Switches).
+Poor: Poor extraction of relevant reasoning.
+Excellent: Prioritizes Emergency Braking for intrusions.
+Poor: Misses obvious obstructions or critical signals.
+Excellent: Fully compliant with signal aspects.
+Poor: Promotes highly unsafe behavior (e.g., SPAD).
+Excellent: Correctly distinguishes safe objects from intruders.
+Poor: Misidentifies or ignores key objects.
+Excellent: No redundancy, concise technical description.
+Poor: Excessive redundancy, making reasoning unclear.
+Excellent: No hallucinations; grounded in the rail domain.
+Poor: Majority of reasoning is hallucinated.
+Excellent: Nearly complete semantic coverage.
+Poor: Very poor semantic coverage with major gaps.
+Excellent: Acknowledges long braking distances and
+horn use.
+Poor: Suggests “Steering” or “Swerving” to avoid obstacles.
+Excellent: No critical steps missing.
+Poor: Response is highly incomplete with critical gaps.
+Excellent: Highly specific (e.g., uses “Ballast”, “Pantograph”).
+Poor: Largely irrelevant or uses generic driving terms.
+Excellent: No significant details are missing.
+Poor: Response is highly lacking in necessary details.
+
+2. Informativeness-Step
+3. Operational Risk Assess.
+4. Signal & Rule Adhere.
+5. Object Understanding
+
+6. Repetition-Token
+7. Hallucination
+
+8. Semantic Coverage
+9. Physics & Momentum
+
+10. Missing Step
+11. Relevance
+
+12. Missing Details
+
+Identification of unnecessary redundancy in the
+generated reasoning.
+Detection of irrelevant or invented reasoning steps
+not aligned with visual facts.
+Extent to which the response covers critical elements defined in the Ground Truth.
+Understanding of train kinematics, 1-degree of
+freedom, and braking inertia.
+
+Evaluation of whether any necessary logical reasoning steps are omitted.
+Specificity to the scenario and correct use of
+railway terminology.
+The extent to which critical contextual information is absent.
+
+Response Format (CoT):
+1. Perception → Reasoning → Planning → Final
+Answer
+2. Final Answer: Directly answer the user’s
+question. If it is a multiple-choice question,
+explicitly state the correct option.
+Your answer must be especially concise,
+professional, and focused on safety implications.
+Defensive Prompting Mechanism:
+When the perception log returns “No objects” for more than
+80% of its entries, the system automatically injects the following critical warning into the user prompt, forcing the LMM to
+leverage its zero-shot anomaly detection capabilities:
+— AUTOMATED DETECTOR STATUS: UNRELIABLE —
+System Report: The automated object detector found
+NO standard targets (People/Cars).
+CRITICAL WARNING: The detector often FAILS
+to see non-standard obstacles (e.g., Bicycles, Rocks,
+Debris).
+INSTRUCTION: IGNORE the detector’s claim of
+’No objects’. You MUST rely SOLELY on the Visual
+
+Images to find anomalies. If you see something in
+the image, TRUST THE IMAGE.
+(III) P ROMPT FOR LLM- AS - A -J UDGE [47]
+To rigorously evaluate the reasoning capabilities, we utilized
+an LLM-as-a-Judge approach, which has been successfully
+applied in DriveLMM-o1 [35]. The prompt defines 12 finegrained semantic metrics, shifting the evaluation paradigm
+from simple n-gram matching to logic and safety-critical
+assessment. The evaluator was instructed with a strict system
+persona and the following scoring rubric (summarized in
+Table VI).
+System Prompt Instructions:
+Avoid subjective interpretation and adhere to the
+given thresholds. Do not add any additional explanations beyond the structured JSON output.
+R EFERENCES
+[1] W.-T. Hong, G. Clifton, and J. D. Nelson, “Railway accident causation analysis: Current approaches, challenges and potential solutions,”
+Accident Analysis & Prevention, vol. 186, p. 107049, 2023.
+[2] R. A. Khalil, Z. Safelnasr, N. Yemane, M. Kedir, A. Shafiqurrahman, and
+N. Saeed, “Advanced learning technologies for intelligent transportation
+systems: Prospects and challenges,” IEEE Open Journal of Vehicular
+Technology, vol. 5, pp. 397–427, 2024.
+
+12
+
+[3] O. Zendel, M. Murschitz, M. Zeilinger, D. Steininger, S. Abbasi, and
+C. Beleznai, “Railsem19: A dataset for semantic rail scene understanding,” in Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition Workshops, 2019, pp. 0–0.
+[4] R. Tagiew, P. Klasek, R. Tilly, M. Köppel, P. Denzler, P. Neumaier,
+T. Klockau, M. Boekhoff, and K. Schwalbe, “Osdar23: Open sensor
+data for rail 2023,” in 2023 8th International Conference on Robotics
+and Automation Engineering (ICRAE). IEEE, 2023, pp. 270–276.
+[5] R. Tagiew, I. Wunderlich, M. Sastuba, K. Göller, and S. Seitz, “Railgoerl24: Görlitz rail test center cv dataset 2024,” in 2025 IEEE Engineering
+Reliable Autonomous Systems (ERAS). IEEE, 2025, pp. 1–4.
+[6] Z. Liang, Y. Xu, Y. Hong, P. Shang, Q. Wang, Q. Fu, and K. Liu, “A
+survey of multimodel large language models,” in Proceedings of the 3rd
+international conference on computer, artificial intelligence and control
+engineering, 2024, pp. 405–409.
+[7] C. Corbiere, S. Roburin, S. Montariol, A. Bosselut, and A. Alahi,
+“Retrieval-based interleaved visual chain-of-thought in real-world driving scenarios,” arXiv preprint arXiv:2501.04671, 2025.
+[8] J.-B. Alayrac, J. Donahue, P. Luc, A. Miech, I. Barr, Y. Hasson, K. Lenc,
+A. Mensch, K. Millican, M. Reynolds et al., “Flamingo: a visual
+language model for few-shot learning,” Advances in neural information
+processing systems, vol. 35, pp. 23 716–23 736, 2022.
+[9] J. Wei, X. Wang, D. Schuurmans, M. Bosma, b. ichter, F. Xia, E. Chi,
+Q. V. Le, and D. Zhou, “Chain-of-thought prompting elicits reasoning in
+large language models,” in Advances in Neural Information Processing
+Systems, vol. 35. Curran Associates, Inc., 2022, pp. 24 824–24 837.
+[10] H. Liu, W. Xue, Y. Chen, D. Chen, X. Zhao, K. Wang, L. Hou, R. Li, and
+W. Peng, “A survey on hallucination in large vision-language models,”
+arXiv preprint arXiv:2402.00253, 2024.
+[11] Y. Li, Y. Du, K. Zhou, J. Wang, W. X. Zhao, and J.-R. Wen, “Evaluating
+object hallucination in large vision-language models,” in Proceedings
+of the 2023 conference on empirical methods in natural language
+processing, 2023, pp. 292–305.
+[12] Y. Chen, N. Zhu, Q. Wu, C. Wu, W. Niu, and Y. Wang, “Mrsi: A multimodal proximity remote sensing data set for environment perception in
+rail transit,” International Journal of Intelligent Systems, vol. 37, no. 9,
+pp. 5530–5556, 2022.
+[13] W. Zhangyu, Y. Guizhen, W. Xinkai, L. Haoran, and L. Da, “A camera
+and lidar data fusion method for railway object detection,” IEEE Sensors
+Journal, vol. 21, no. 12, pp. 13 442–13 454, 2021.
+[14] Q. Guo and J. Rambach, “Synrailobs: A synthetic dataset for obstacle
+detection in railway scenarios,” arXiv preprint arXiv:2505.10784, 2025.
+[15] H. Salmane, L. Khoudour, and Y. Ruichek, “A video-analysis-based
+railway–road safety system for detecting hazard situations at level
+crossings,” IEEE transactions on intelligent transportation systems,
+vol. 16, no. 2, pp. 596–609, 2015.
+[16] Z. Šilar and M. Dobrovolnỳ, “The obstacle detection on the railway
+crossing based on optical flow and clustering,” in 2013 36th International Conference on Telecommunications and Signal Processing (TSP).
+IEEE, 2013, pp. 755–759.
+[17] Z. Cao, Y. Qin, Z. Xie, Q. Liu, E. Zhang, Z. Wu, and Z. Yu, “An effective
+railway intrusion detection method using dynamic intrusion region and
+lightweight neural network,” Measurement, vol. 191, p. 110564, 2022.
+[18] Z. Wang and X. Du, “Yolo-rail: An improved yolo model for obstacle
+detection on railway tracks,” IEEE Sensors Journal, 2026.
+[19] Z. Zhang, P. Chen, Y. Huang, L. Dai, F. Xu, and H. Hu, “Railway
+obstacle intrusion warning mechanism integrating yolo-based detection
+and risk assessment,” Journal of Industrial Information Integration,
+vol. 38, p. 100571, 2024.
+[20] C. Chen, H. Qin, Y. Qin, and Y. Bai, “Real-time railway obstacle
+detection based on multitask perception learning,” IEEE Transactions
+on Intelligent Transportation Systems, 2025.
+[21] W. Liu, Y. Wang, G. Yu, Z. Wang, and P. Chen, “Railfusion: A lidarcamera data interaction network for 3-d railway object detection,” IEEE
+Transactions on Intelligent Transportation Systems, 2025.
+[22] S. Antol, A. Agrawal, J. Lu, M. Mitchell, D. Batra, C. L. Zitnick, and
+D. Parikh, “Vqa: Visual question answering,” in Proceedings of the IEEE
+international conference on computer vision, 2015, pp. 2425–2433.
+[23] H. Liu, C. Li, Q. Wu, and Y. J. Lee, “Visual instruction tuning,”
+Advances in neural information processing systems, vol. 36, pp. 34 892–
+34 916, 2023.
+[24] J. Bai, S. Bai, S. Yang, S. Wang, S. Tan, P. Wang, J. Lin, C. Zhou, and
+J. Zhou, “Qwen-vl: A versatile vision-language model for understanding,
+localization,” Text Reading, and Beyond, vol. 2, no. 1, p. 1, 2023.
+[25] O. Schumann, M. Hahn, N. Scheiner, F. Weishaupt, J. F. Tilly, J. Dickmann, and C. Wöhler, “Radarscenes: A real-world radar point cloud
+
+data set for automotive applications,” in 2021 IEEE 24th International
+Conference on Information Fusion (FUSION). IEEE, 2021, pp. 1–8.
+[26] L. Xu, H. Huang, and J. Liu, “Sutd-trafficqa: A question answering
+benchmark and an efficient network for video reasoning over traffic
+events,” in Proceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, 2021, pp. 9878–9888.
+[27] T. Qian, J. Chen, L. Zhuo, Y. Jiao, and Y.-G. Jiang, “Nuscenes-qa:
+A multi-modal visual question answering benchmark for autonomous
+driving scenario,” in Proceedings of the AAAI Conference on Artificial
+Intelligence, vol. 38, no. 5, 2024, pp. 4542–4550.
+[28] A.-M. Marcu, L. Chen, J. Hünermann, A. Karnsund, B. Hanotte,
+P. Chidananda, S. Nair, V. Badrinarayanan, A. Kendall, J. Shotton
+et al., “Lingoqa: Visual question answering for autonomous driving,” in
+European Conference on Computer Vision. Springer, 2024, pp. 252–
+269.
+[29] H. Tian, K. Reddy, Y. Feng, M. Quddus, Y. Demiris, and P. Angeloudis, “Large (vision) language models for autonomous vehicles:
+Current trends and future directions,” IEEE Transactions on Intelligent
+Transportation Systems, vol. 27, no. 1, pp. 187–210, 2025.
+[30] C. Sima, K. Renz, K. Chitta, L. Chen, H. Zhang, C. Xie, J. Beißwenger,
+P. Luo, A. Geiger, and H. Li, “Drivelm: Driving with graph visual question answering,” in European conference on computer vision. Springer,
+2024, pp. 256–274.
+[31] X. Tian, J. Gu, B. Li, Y. Liu, Y. Wang, Z. Zhao, K. Zhan, P. Jia, X. Lang,
+and H. Zhao, “Drivevlm: The convergence of autonomous driving and
+large vision-language models,” arXiv preprint arXiv:2402.12289, 2024.
+[32] Z. Xu, Y. Zhang, E. Xie, Z. Zhao, Y. Guo, K.-Y. K. Wong, Z. Li, and
+H. Zhao, “Drivegpt4: Interpretable end-to-end autonomous driving via
+large language model,” IEEE Robotics and Automation Letters, vol. 9,
+no. 10, pp. 8186–8193, 2024.
+[33] Z. Huang, C. Feng, F. Yan, B. Xiao, Z. Jie, Y. Zhong, X. Liang,
+and L. Ma, “Robotron-drive: All-in-one large multimodal model for
+autonomous driving,” in Proceedings of the IEEE/CVF International
+Conference on Computer Vision, 2025, pp. 8011–8021.
+[34] A. Wu and X. Luo, “Enhancing vision-language models for autonomous
+driving through task-specific prompting and spatial reasoning,” arXiv
+preprint arXiv:2510.24152, 2025.
+[35] A. Ishaq, J. Lahoud, K. More, O. Thawakar, R. Thawkar, D. Dissanayake, N. Ahsan, Y. Li, F. S. Khan, H. Cholakkal et al., “Drivelmmo1: A step-by-step reasoning dataset and large multimodal model
+for driving scenario understanding,” in 2025 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS). IEEE, 2025,
+pp. 20 501–20 508.
+[36] Y. Gao, M. Piccinini, Y. Zhang, D. Wang, K. Moller, R. Brusnicki,
+B. Zarrouki, A. Gambi, J. F. Totz, K. Storms et al., “Foundation models
+in autonomous driving: A survey on scenario generation and scenario
+analysis,” IEEE Open Journal of Intelligent Transportation Systems,
+2026.
+[37] Y. Chen, J. Zhao, and H. Han, “A survey on collaborative mechanisms between large and small language models,” arXiv preprint
+arXiv:2505.07460, 2025.
+[38] S. Li, H. Wang, W. Xu, R. Zhang, S. Guo, J. Yuan, X. Zhong, T. Zhang,
+and R. Li, “Collaborative inference and learning between edge slms and
+cloud llms: A survey of algorithms, execution, and open challenges,”
+arXiv preprint arXiv:2507.16731, 2025.
+[39] H. Guo, Y. Wang, Z. Ye, J. Dai, and Y. Xiong, “big. little vision transformer for efficient visual recognition,” arXiv preprint
+arXiv:2410.10267, 2024.
+[40] C. Kelly, L. Hu, B. Yang, Y. Tian, D. Yang, C. Yang, Z. Huang,
+Z. Li, J. Hu, and Y. Zou, “Visiongpt: Vision-language understanding agent using generalized multimodal framework,” arXiv preprint
+arXiv:2403.09027, 2024.
+[41] Y. Liu, L. Qin, and S. Wang, “Small drafts, big verdict:
+Information-intensive visual reasoning via speculation,” arXiv preprint
+arXiv:2510.20812, 2025.
+[42] G. Dai, S. Tang, and Y. Zhuang, “Kcm: Kan-based collaboration models
+enhance pretrained large models,” arXiv preprint arXiv:2510.20278,
+2025.
+[43] W. Chen, Z. Zhao, J. Yao, Y. Zhang, J. Bu, and H. Wang, “Multi-modal
+medical diagnosis via large-small model collaboration,” in Proceedings
+of the Computer Vision and Pattern Recognition Conference, 2025, pp.
+30 763–30 773.
+[44] Z. Sun, K. Guo, Y. Hu, D. Tian, Q. Gao, J. Wang, J. Gao, Y. Sun,
+and B. Yin, “Large-small model synergy with multimodal fine-grained
+heuristics for knowledge-based visual question answering,” in Proceedings of the 33rd ACM International Conference on Multimedia, 2025,
+pp. 935–944.
+
+13
+
+[45] M. Foutter, D. Gammelli, J. Kruger, E. Foss, P. Bhoj, T. Guffanti,
+S. D’Amico, and M. Pavone, “Space-llava: a vision-language
+model adapted to extraterrestrial applications,” arXiv preprint
+arXiv:2408.05924, 2024.
+[46] S. Bai, Y. Cai, R. Chen, K. Chen, X. Chen, Z. Cheng, L. Deng,
+W. Ding, C. Gao, C. Ge et al., “Qwen3-vl technical report,” arXiv
+preprint arXiv:2511.21631, 2025.
+[47] L. Zheng, W.-L. Chiang, Y. Sheng, S. Zhuang, Z. Wu, Y. Zhuang, Z. Lin,
+Z. Li, D. Li, E. Xing et al., “Judging llm-as-a-judge with mt-bench
+and chatbot arena,” Advances in neural information processing systems,
+vol. 36, pp. 46 595–46 623, 2023.
+[48] Y. Liu, D. Iter, Y. Xu, S. Wang, R. Xu, and C. Zhu, “G-eval: Nlg
+evaluation using gpt-4 with better human alignment,” in Proceedings
+of the 2023 conference on empirical methods in natural language
+processing, 2023, pp. 2511–2522.
+[49] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You only look
+once: Unified, real-time object detection,” in Proceedings of the IEEE
+conference on computer vision and pattern recognition, 2016, pp. 779–
+788.
+[50] Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu,
+and X. Wang, “Bytetrack: Multi-object tracking by associating every
+detection box,” in European conference on computer vision. Springer,
+2022, pp. 1–21.
+[51] Z. Chen, J. Wu, W. Wang, W. Su, G. Chen, S. Xing, M. Zhong, Q. Zhang,
+X. Zhu, L. Lu et al., “Internvl: Scaling up vision foundation models
+and aligning for generic visual-linguistic tasks,” in Proceedings of the
+IEEE/CVF conference on computer vision and pattern recognition, 2024,
+pp. 24 185–24 198.
+[52] J. Chi, U. Karn, H. Zhan, E. Smith, J. Rando, Y. Zhang, K. Plawiak, Z. D.
+Coudert, K. Upasani, and M. Pasupuleti, “Llama guard 3 vision: Safeguarding human-ai image understanding conversations,” arXiv preprint
+arXiv:2411.10414, 2024.
+[53] Z. Zhou, X. Ning, K. Hong, T. Fu, J. Xu, S. Li, Y. Lou, L. Wang,
+Z. Yuan, X. Li et al., “A survey on efficient inference for large language
+models,” arXiv preprint arXiv:2404.14294, 2024.
+
+Sen Zhang is currently studying at the School of Automation and Intelligent
+Systems of Beijing Jiaotong University, Beijing, China. His current research
+interests include large-scale language models and embodied intelligence.
+
+Runmei Li received the Ph.D. degree from Institute of Automation, Chinese
+Academy of Sciences, Beijing, China, in 2005. She is currently a Professor
+and Associate Dean with the School of Automation and Intelligent Systems,
+Beijing Jiaotong University. Her research interests include control engineering,
+artificial intelligence, and intelligent traffic.
+
+Shizhuang Deng received the M.Eng. degree in Software Engineering from
+Northwestern Polytechnical University, Xi’an, China, in 2026. He is currently
+a Ph.D. candidate of Software Engineering with the School of Software
+Engineering, Northwestern Polytechnical University. His current research
+interests include Retrieval-Augmented Generation, large model reasoning and
+decision-making, and multi-agent collaboration.
+
+Zhichao Zheng is currently studying at the School of Automation and
+Intelligent Systems of Beijing Jiaotong University, Beijing, China. His current
+research interests include large language models and multi-agent planning.
+
+Yuhe Zhang is currently studying at the school of Automation and Intelligent
+Systems, Beijing Jiaotong University, Beijing, China. His current research interests include intelligent control and knowledge-enhanced intelligent systems.
+
+Jiani Li is currently studying at the school of Automation and Intelligent
+Systems, Beijing Jiaotong University, Beijing, China. Her current research
+interests include emdodied intelligence and embodied question answering.
+
+Kailun Zhang is currently studying at the school of Automation and Intelligent Systems, Beijing Jiaotong University, Beijing, China. His current research interests include knowledge-driven intelligent systems and autonomous
+decision-making.
+
+Tao Zhang received Ph.D. degree in Software Engineering from Northwestern
+Polytechnical University, Xi’an, China, in 2006. He is currently employed at
+Northwestern Polytechnical University as a professor. His research interests
+include artificial intelligence and decision systems.
+
+Wenjun Wu received Ph.D. degree in Computer Science from Beihang
+University, Beijing, China, in 2001. He is currently employed at Beihang
+University as a professor. His research interests include pre-trained model,
+deep learning, cloud computing.
+
+Qunbo Wang received Ph.D. degree in Software Engineering from Beihang
+University, Beijing, China, in 2022. He is currently serving as an associate
+professor at Beijing Jiaotong University. His research interests include pretrained model, machine learning, and embodied AI.
+
+
