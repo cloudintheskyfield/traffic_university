@@ -1,0 +1,46 @@
+{
+  "input_image": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images/train_0001.jpg",
+  "image_dir": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images",
+  "annotated_image": "results/yolo_io_test/train_0001_annotated.jpg",
+  "yolo_model": "/mnt1/mnt2/data3/nlp/ws/model/YOLO26/yolo26m.pt",
+  "device": null,
+  "confidence_threshold": 0.25,
+  "imgsz": 640,
+  "num_detections": 2,
+  "detections": [
+    {
+      "class_id": 6,
+      "class_name": "train",
+      "confidence": 0.899201,
+      "bbox_xyxy": [
+        161.07,
+        537.87,
+        791.2,
+        715.34
+      ],
+      "bbox_xywh": [
+        476.14,
+        626.61,
+        630.13,
+        177.47
+      ]
+    },
+    {
+      "class_id": 6,
+      "class_name": "train",
+      "confidence": 0.868593,
+      "bbox_xyxy": [
+        1148.56,
+        553.35,
+        1917.18,
+        693.43
+      ],
+      "bbox_xywh": [
+        1532.87,
+        623.39,
+        768.62,
+        140.08
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "input_image": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images/train_0004.jpg",
+  "image_dir": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images",
+  "annotated_image": "results/yolo_io_test/train_0004_annotated.jpg",
+  "yolo_model": "/mnt1/mnt2/data3/nlp/ws/model/YOLO26/yolo26m.pt",
+  "device": null,
+  "confidence_threshold": 0.25,
+  "imgsz": 640,
+  "num_detections": 0,
+  "detections": []
+}

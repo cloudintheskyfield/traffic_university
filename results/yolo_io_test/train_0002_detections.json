@@ -1,0 +1,63 @@
+{
+  "input_image": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images/train_0002.jpg",
+  "image_dir": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train_images",
+  "annotated_image": "results/yolo_io_test/train_0002_annotated.jpg",
+  "yolo_model": "/mnt1/mnt2/data3/nlp/ws/model/YOLO26/yolo26m.pt",
+  "device": null,
+  "confidence_threshold": 0.25,
+  "imgsz": 640,
+  "num_detections": 3,
+  "detections": [
+    {
+      "class_id": 2,
+      "class_name": "car",
+      "confidence": 0.560196,
+      "bbox_xyxy": [
+        382.4,
+        407.49,
+        529.81,
+        450.43
+      ],
+      "bbox_xywh": [
+        456.11,
+        428.96,
+        147.41,
+        42.94
+      ]
+    },
+    {
+      "class_id": 2,
+      "class_name": "car",
+      "confidence": 0.441222,
+      "bbox_xyxy": [
+        0.74,
+        419.9,
+        280.75,
+        557.49
+      ],
+      "bbox_xywh": [
+        140.75,
+        488.7,
+        280.0,
+        137.59
+      ]
+    },
+    {
+      "class_id": 7,
+      "class_name": "truck",
+      "confidence": 0.292951,
+      "bbox_xyxy": [
+        382.4,
+        407.49,
+        529.81,
+        450.43
+      ],
+      "bbox_xywh": [
+        456.11,
+        428.96,
+        147.41,
+        42.94
+      ]
+    }
+  ]
+}
