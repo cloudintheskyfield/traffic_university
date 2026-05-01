@@ -1,0 +1,46 @@
+Starting Qwen3.5-35B-A3B judge server
+Model dir: /mnt1/mnt2/data3/nlp/ws/model/Qwen3.5-35B-A3B
+Served model name: qwen35-35b-a3b-judge
+CUDA_VISIBLE_DEVICES: 4,5
+Tensor parallel size: 2
+Endpoint: http://0.0.0.0:8001/v1
+Log file suggestion: /mnt1/mnt2/data3/nlp/ws/proj/课题组/results/qwen35_35b_judge_vllm.log
+INFO 04-30 12:05:02 [__init__.py:216] Automatically detected platform cuda.
+[1;36m(APIServer pid=2404853)[0;0m INFO 04-30 12:05:08 [api_server.py:1839] vLLM API server version 0.11.0
+[1;36m(APIServer pid=2404853)[0;0m INFO 04-30 12:05:08 [utils.py:233] non-default args: {'model_tag': '/mnt1/mnt2/data3/nlp/ws/model/Qwen3.5-35B-A3B', 'host': '0.0.0.0', 'port': 8001, 'model': '/mnt1/mnt2/data3/nlp/ws/model/Qwen3.5-35B-A3B', 'trust_remote_code': True, 'max_model_len': 32768, 'served_model_name': ['qwen35-35b-a3b-judge'], 'reasoning_parser': 'qwen3', 'tensor_parallel_size': 2, 'gpu_memory_utilization': 0.85}
+[1;36m(APIServer pid=2404853)[0;0m The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+[1;36m(APIServer pid=2404853)[0;0m Traceback (most recent call last):
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/bin/vllm", line 6, in <module>
+[1;36m(APIServer pid=2404853)[0;0m     sys.exit(main())
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/cli/main.py", line 54, in main
+[1;36m(APIServer pid=2404853)[0;0m     args.dispatch_function(args)
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/cli/serve.py", line 57, in cmd
+[1;36m(APIServer pid=2404853)[0;0m     uvloop.run(run_server(args))
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/uvloop/__init__.py", line 69, in run
+[1;36m(APIServer pid=2404853)[0;0m     return loop.run_until_complete(wrapper())
+[1;36m(APIServer pid=2404853)[0;0m   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/uvloop/__init__.py", line 48, in wrapper
+[1;36m(APIServer pid=2404853)[0;0m     return await main
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 1884, in run_server
+[1;36m(APIServer pid=2404853)[0;0m     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 1902, in run_server_worker
+[1;36m(APIServer pid=2404853)[0;0m     async with build_async_engine_client(
+[1;36m(APIServer pid=2404853)[0;0m   File "/usr/lib/python3.10/contextlib.py", line 199, in __aenter__
+[1;36m(APIServer pid=2404853)[0;0m     return await anext(self.gen)
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 180, in build_async_engine_client
+[1;36m(APIServer pid=2404853)[0;0m     async with build_async_engine_client_from_engine_args(
+[1;36m(APIServer pid=2404853)[0;0m   File "/usr/lib/python3.10/contextlib.py", line 199, in __aenter__
+[1;36m(APIServer pid=2404853)[0;0m     return await anext(self.gen)
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 206, in build_async_engine_client_from_engine_args
+[1;36m(APIServer pid=2404853)[0;0m     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/engine/arg_utils.py", line 1142, in create_engine_config
+[1;36m(APIServer pid=2404853)[0;0m     model_config = self.create_model_config()
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/vllm/engine/arg_utils.py", line 994, in create_model_config
+[1;36m(APIServer pid=2404853)[0;0m     return ModelConfig(
+[1;36m(APIServer pid=2404853)[0;0m   File "/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/lib/python3.10/site-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+[1;36m(APIServer pid=2404853)[0;0m     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+[1;36m(APIServer pid=2404853)[0;0m pydantic_core._pydantic_core.ValidationError: 1 validation error for ModelConfig
+[1;36m(APIServer pid=2404853)[0;0m   Value error, The checkpoint you are trying to load has model type `qwen3_5_moe` but Transformers does not recognize this architecture. This could be because of an issue with the checkpoint, or because your version of Transformers is out of date.
+[1;36m(APIServer pid=2404853)[0;0m 
+[1;36m(APIServer pid=2404853)[0;0m You can update Transformers with the command `pip install --upgrade transformers`. If this does not work, and the checkpoint is very new, then there may not be a release version that supports this model yet. In this case, you can get the most up-to-date code by installing Transformers from source with the command `pip install git+https://github.com/huggingface/transformers.git` [type=value_error, input_value=ArgsKwargs((), {'model': ...rocessor_plugin': None}), input_type=ArgsKwargs]
+[1;36m(APIServer pid=2404853)[0;0m     For further information visit https://errors.pydantic.dev/2.13/v/value_error

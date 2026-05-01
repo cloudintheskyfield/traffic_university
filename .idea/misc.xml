@@ -4,4 +4,7 @@
     <option name="sdkName" value="Python 3.9" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Remote 3.10 (sftp://maintain@223.109.239.14:32200/mnt1/mnt2/data3/nlp/ws/uv_env/.venv/bin/python)" project-jdk-type="Python SDK" />
+  <component name="PyPackaging">
+    <option name="earlyReleasesAsUpgrades" value="true" />
+  </component>
 </project>

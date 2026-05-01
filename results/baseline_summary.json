@@ -1,0 +1,24 @@
+[
+  {
+    "label": "baseline",
+    "path": "results/baseline_vllm_resume.jsonl",
+    "file_modified": "2026-04-30 08:26:55",
+    "completed": 496,
+    "dataset_total": 6000,
+    "completion_rate": 0.08266666666666667,
+    "task_counts": {
+      "qa": 248,
+      "mc": 248
+    },
+    "scored_total": 248,
+    "correct_total": 224,
+    "accuracy": 0.9032258064516129,
+    "accuracy_by_task": {
+      "mc": {
+        "correct": 224,
+        "total": 248,
+        "accuracy": 0.9032258064516129
+      }
+    }
+  }
+]

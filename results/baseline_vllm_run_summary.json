@@ -1,0 +1,19 @@
+{
+  "dataset_file": "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1/train.jsonl",
+  "result_path": "/mnt1/mnt2/data3/nlp/ws/proj/课题组/results/baseline_vllm_results_260430_0907.json",
+  "resume_path": "/mnt1/mnt2/data3/nlp/ws/proj/课题组/results/baseline_vllm_resume.jsonl",
+  "completed": 6000,
+  "dataset_total": 6000,
+  "completion_rate": 1.0,
+  "task_counts": {
+    "qa": 3000,
+    "mc": 3000
+  },
+  "mc_correct": 2746,
+  "mc_total": 3000,
+  "mc_accuracy": 0.9153333333333333,
+  "elapsed_seconds_this_run": 1384.8055370019283,
+  "elapsed_readable_this_run": "23m04s",
+  "new_samples_this_run": 5104,
+  "avg_seconds_per_new_sample": 0.2713176992558637
+}

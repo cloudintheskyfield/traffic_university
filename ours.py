@@ -1,3 +1,9 @@
+import runpy as _runpy
+from pathlib import Path as _Path
+
+_runpy.run_path(str(_Path(__file__).with_name("ours_vllm.py")), run_name="__main__")
+raise SystemExit
+
 import argparse
 import json
 import os
@@ -11,6 +17,12 @@ from PIL import Image
 from tqdm import tqdm
 import cv2
 from ultralytics import YOLO
+
+DEFAULT_DATASET_ROOT = "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1"
+DEFAULT_MODEL_PATH = "/mnt1/mnt2/data3/nlp/ws/model/Qwen3-VL-8B-Instruct"
+DEFAULT_YOLO_PATH = "/mnt1/mnt2/data3/nlp/ws/model/YOLO26/yolo26m.pt"
+DEFAULT_DATASET_FILE = os.path.join(DEFAULT_DATASET_ROOT, "train.jsonl")
+DEFAULT_IMAGE_DIR = os.path.join(DEFAULT_DATASET_ROOT, "train_images")
 
 def load_proposed_model(model_path, use_4bit=False):
     print(f"Loading Proposed Model from {model_path}...")
@@ -158,10 +170,10 @@ def evaluate_proposed(args, model, processor):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, required=True)
-    parser.add_argument('--dataset-file', type=str, required=True)
-    parser.add_argument('--image-dir', type=str, required=True)
-    parser.add_argument('--yolo-path', type=str, required=True)
+    parser.add_argument('--model-path', type=str, default=DEFAULT_MODEL_PATH)
+    parser.add_argument('--dataset-file', type=str, default=DEFAULT_DATASET_FILE)
+    parser.add_argument('--image-dir', type=str, default=DEFAULT_IMAGE_DIR)
+    parser.add_argument('--yolo-path', type=str, default=DEFAULT_YOLO_PATH)
     parser.add_argument('--out-dir', type=str, default='results')
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--use-4bit', action='store_true', help="Enable AWQ/BitsAndBytes 4-bit quantization")

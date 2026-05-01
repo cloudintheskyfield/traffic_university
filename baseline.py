@@ -1,3 +1,9 @@
+import runpy as _runpy
+from pathlib import Path as _Path
+
+_runpy.run_path(str(_Path(__file__).with_name("baseline_vllm.py")), run_name="__main__")
+raise SystemExit
+
 import argparse
 import json
 import os
@@ -8,6 +14,11 @@ import torch
 from modelscope import Qwen3VLForConditionalGeneration, AutoProcessor
 from PIL import Image
 from tqdm import tqdm
+
+DEFAULT_DATASET_ROOT = "/mnt1/mnt2/data3/nlp/ws/course_data/dataset_divided_1"
+DEFAULT_MODEL_PATH = "/mnt1/mnt2/data3/nlp/ws/model/Qwen3-VL-8B-Instruct"
+DEFAULT_DATASET_FILE = os.path.join(DEFAULT_DATASET_ROOT, "train.jsonl")
+DEFAULT_IMAGE_DIR = os.path.join(DEFAULT_DATASET_ROOT, "train_images")
 
 def load_baseline_model(model_path):
     print(f"Loading Baseline Qwen-VL from {model_path}...")
@@ -129,9 +140,9 @@ def evaluate_baseline(args, model, processor):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, required=True)
-    parser.add_argument('--dataset-file', type=str, required=True)
-    parser.add_argument('--image-dir', type=str, required=True)
+    parser.add_argument('--model-path', type=str, default=DEFAULT_MODEL_PATH)
+    parser.add_argument('--dataset-file', type=str, default=DEFAULT_DATASET_FILE)
+    parser.add_argument('--image-dir', type=str, default=DEFAULT_IMAGE_DIR)
     parser.add_argument('--out-dir', type=str, default='results')
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--num-workers', type=int, default=4)
